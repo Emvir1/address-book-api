@@ -66,7 +66,6 @@ def get_addresses_within_distance(
     center_lon: float,
     distance_km: float,
 ) -> list[Address]:
-    # Coarse bounding-box pre-filter in SQL to avoid running geodesic on every row
     lat_delta = distance_km / 111.0
     lon_delta = distance_km / (111.0 * math.cos(math.radians(center_lat))) if abs(center_lat) < 90 else distance_km
 
