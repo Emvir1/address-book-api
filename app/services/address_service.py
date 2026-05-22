@@ -15,14 +15,14 @@ def create_address(db: Session, payload: AddressCreate) -> Address:
     db.add(address)
     db.commit()
     db.refresh(address)
-    logger.info("Created address id=%d name=%r city=%r country=%r", address.id, address.name, address.city, address.country)
+    logger.info("Created address name=%r city=%r country=%r", address.name, address.city, address.country)
     return address
 
 
 def get_address(db: Session, address_id: int) -> Address | None:
     address = db.get(Address, address_id)
     if address is None:
-        logger.warning("Address id=%d not found", address_id)
+        logger.warning("Lookup failed — the requested address does not exist")
     return address
 
 
@@ -35,7 +35,7 @@ def list_addresses(db: Session, skip: int = 0, limit: int = 100) -> list[Address
 def update_address(db: Session, address_id: int, payload: AddressUpdate) -> Address | None:
     address = db.get(Address, address_id)
     if address is None:
-        logger.warning("Update failed — address id=%d not found", address_id)
+        logger.warning("Update skipped — the requested address does not exist")
         return None
 
     update_data = payload.model_dump(exclude_unset=True)
@@ -44,19 +44,19 @@ def update_address(db: Session, address_id: int, payload: AddressUpdate) -> Addr
 
     db.commit()
     db.refresh(address)
-    logger.info("Updated address id=%d fields=%s", address_id, list(update_data.keys()))
+    logger.info("Updated address fields=%s", list(update_data.keys()))
     return address
 
 
 def delete_address(db: Session, address_id: int) -> bool:
     address = db.get(Address, address_id)
     if address is None:
-        logger.warning("Delete failed — address id=%d not found", address_id)
+        logger.warning("Delete skipped — the requested address does not exist")
         return False
 
     db.delete(address)
     db.commit()
-    logger.info("Deleted address id=%d", address_id)
+    logger.info("Deleted address name=%r", address.name)
     return True
 
 

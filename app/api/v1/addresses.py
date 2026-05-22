@@ -33,6 +33,8 @@ def list_all(
     return list_addresses(db, skip=skip, limit=limit)
 
 
+# /nearby must be declared before /{address_id} — FastAPI resolves routes top-down
+# and would otherwise treat "nearby" as an integer address_id, causing a 422 error.
 @router.get("/nearby", response_model=list[AddressResponse])
 def nearby(
     latitude: float = Query(..., ge=-90.0, le=90.0, description="Center latitude"),
@@ -49,16 +51,30 @@ def get_one(address_id: int, db: Session = Depends(get_db)) -> AddressResponse:
     logger.info("GET /addresses/%d", address_id)
     address = get_address(db, address_id)
     if address is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Address {address_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The requested address does not exist.",
+        )
     return address
 
 
+# PATCH instead of PUT — allows partial updates so callers only send changed fields.
+# PUT would require the full object every time, forcing unnecessary data transfer.
 @router.patch("/{address_id}", response_model=AddressResponse)
 def update(address_id: int, payload: AddressUpdate, db: Session = Depends(get_db)) -> AddressResponse:
     logger.info("PATCH /addresses/%d", address_id)
+    if not payload.model_fields_set:
+        logger.warning("PATCH /addresses/%d rejected — empty payload", address_id)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one field must be provided to update.",
+        )
     address = update_address(db, address_id, payload)
     if address is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Address {address_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The address you are trying to update does not exist.",
+        )
     return address
 
 
@@ -67,4 +83,7 @@ def delete(address_id: int, db: Session = Depends(get_db)) -> None:
     logger.info("DELETE /addresses/%d", address_id)
     deleted = delete_address(db, address_id)
     if not deleted:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Address {address_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The address you are trying to delete does not exist.",
+        )
