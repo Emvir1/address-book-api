@@ -1,7 +1,6 @@
 import math
 
 from geopy.distance import geodesic
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.logging import get_logger
@@ -12,17 +11,12 @@ logger = get_logger(__name__)
 
 
 def create_address(db: Session, payload: AddressCreate) -> Address:
-    try:
-        address = Address(**payload.model_dump())
-        db.add(address)
-        db.commit()
-        db.refresh(address)
-        logger.info("Created address id=%d name=%r city=%r country=%r", address.id, address.name, address.city, address.country)
-        return address
-    except SQLAlchemyError as e:
-        db.rollback()
-        logger.error("Failed to create address name=%r: %s", payload.name, str(e))
-        raise
+    address = Address(**payload.model_dump())
+    db.add(address)
+    db.commit()
+    db.refresh(address)
+    logger.info("Created address id=%d name=%r city=%r country=%r", address.id, address.name, address.city, address.country)
+    return address
 
 
 def get_address(db: Session, address_id: int) -> Address | None:
@@ -44,18 +38,14 @@ def update_address(db: Session, address_id: int, payload: AddressUpdate) -> Addr
         logger.warning("Update failed — address id=%d not found", address_id)
         return None
 
-    try:
-        update_data = payload.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(address, field, value)
-        db.commit()
-        db.refresh(address)
-        logger.info("Updated address id=%d fields=%s", address_id, list(update_data.keys()))
-        return address
-    except SQLAlchemyError as e:
-        db.rollback()
-        logger.error("Failed to update address id=%d: %s", address_id, str(e))
-        raise
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(address, field, value)
+
+    db.commit()
+    db.refresh(address)
+    logger.info("Updated address id=%d fields=%s", address_id, list(update_data.keys()))
+    return address
 
 
 def delete_address(db: Session, address_id: int) -> bool:
@@ -64,15 +54,10 @@ def delete_address(db: Session, address_id: int) -> bool:
         logger.warning("Delete failed — address id=%d not found", address_id)
         return False
 
-    try:
-        db.delete(address)
-        db.commit()
-        logger.info("Deleted address id=%d", address_id)
-        return True
-    except SQLAlchemyError as e:
-        db.rollback()
-        logger.error("Failed to delete address id=%d: %s", address_id, str(e))
-        raise
+    db.delete(address)
+    db.commit()
+    logger.info("Deleted address id=%d", address_id)
+    return True
 
 
 def get_addresses_within_distance(
