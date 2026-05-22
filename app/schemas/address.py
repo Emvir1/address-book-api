@@ -13,6 +13,8 @@ class AddressBase(BaseModel):
     latitude: float = Field(..., ge=-90.0, le=90.0, description="Latitude in decimal degrees")
     longitude: float = Field(..., ge=-180.0, le=180.0, description="Longitude in decimal degrees")
 
+    # mode="before" runs this validator before Pydantic's own type coercion so a
+    # whitespace-only string is rejected before it is accepted as a valid str.
     @field_validator("name", "street", "city", "country", mode="before")
     @classmethod
     def strip_and_reject_blank(cls, v: str) -> str:
@@ -26,6 +28,8 @@ class AddressCreate(AddressBase):
     pass
 
 
+# AddressUpdate does not inherit from AddressBase because every field must be
+# optional to support partial updates — inheriting would keep them all required.
 class AddressUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=255)
     street: str | None = Field(None, min_length=1, max_length=500)
@@ -52,6 +56,8 @@ class AddressResponse(AddressBase):
     created_at: datetime
     updated_at: datetime
 
+    # from_attributes allows Pydantic to read values directly from SQLAlchemy
+    # ORM objects instead of requiring a plain dict.
     model_config = ConfigDict(from_attributes=True)
 
 

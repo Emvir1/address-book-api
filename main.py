@@ -17,7 +17,9 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    logger.info("Starting up — environment=%s", settings.APP_ENV)
+    logger.info("Starting up - environment=%s", settings.APP_ENV)
+    # create_all is a no-op when tables already exist, so it is safe to call
+    # on every startup without risking data loss.
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables ready")
     yield

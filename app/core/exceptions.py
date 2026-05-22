@@ -8,11 +8,13 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 
 
+# Handlers are registered via a function so main.py stays clean and the same
+# handlers can be reused in tests by passing a test app instance.
 def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-        # Pydantic v2 puts the original exception object inside ctx when a
+        # Pydantic v2 places the original exception object inside ctx when a
         # field_validator raises ValueError. That object is not JSON serializable,
         # so we convert ctx values to strings before returning the response.
         errors = []
@@ -31,6 +33,8 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(SQLAlchemyError)
     async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
+        # Full exception is logged for debugging but the client receives a generic
+        # message to avoid leaking internal database details.
         logger.error(
             "Database error - %s %s - %s",
             request.method,

@@ -15,9 +15,11 @@ def setup_logging() -> None:
 
     root = logging.getLogger()
     root.setLevel(level)
+    # Clears any handlers added by earlier imports to prevent duplicate log lines.
     root.handlers.clear()
     root.addHandler(handler)
 
+    # Both loggers are very chatty at INFO and add no value for app debugging.
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
