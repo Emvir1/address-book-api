@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
 from app.api.v1 import addresses
 from app.core.config import settings
@@ -35,5 +36,11 @@ app = FastAPI(
 register_exception_handlers(app)
 
 app.include_router(addresses.router, prefix=f"/api/{settings.API_VERSION}")
+
+
+@app.get("/", tags=["Health"])
+def health_check() -> JSONResponse:
+    logger.info("Health check requested")
+    return JSONResponse(content={"status": "ok", "version": app.version, "environment": settings.APP_ENV})
 
 logger.info("Routes registered under /api/%s", settings.API_VERSION)
