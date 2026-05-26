@@ -46,7 +46,7 @@ cp .env.example .env
 **5. Run the app**
 
 ```bash
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
 
 The API is now running at `http://127.0.0.1:8000`
@@ -110,7 +110,7 @@ address-book-api/
 │   ├── models/         # SQLAlchemy ORM models
 │   ├── schemas/        # Pydantic request/response schemas
 │   └── services/       # Business logic
-├── main.py             # App entry point
+│   └── main.py         # App entry point
 ├── requirements.txt
 ├── Dockerfile
 └── .env.example
